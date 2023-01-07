@@ -267,7 +267,7 @@ class HourGlassNetMultiScaleInt(nn.Module):
                     srout_corner = self.upsample_corner(sr_feature)
                     corner_map = self.corner_map(sr_feature)
                     result.append(srout_corner)
-                    flat_r, flat_g, flat_b = flat_map.split(split_size=1, dim=1)  # TODO: WTF is this??
+                    flat_r, flat_g, flat_b = flat_map.split(split_size=1, dim=1)
                     edge_r, edge_g, edge_b = edge_map.split(split_size=1, dim=1)
                     corner_r, corner_g, corner_b = corner_map.split(split_size=1, dim=1)
                     r_map = torch.cat((flat_r, edge_r, corner_r), dim=1)

@@ -1,10 +1,16 @@
 import sys
 from collections import OrderedDict
+from functools import lru_cache
 
 import torch
 import torch.nn as nn
 
 from .device import get_default_device
+
+
+@lru_cache()
+def _load_model_weight_ckpt(weights):
+    return torch.load(weights, map_location=get_default_device())
 
 
 # model tools
@@ -16,7 +22,7 @@ def load_weights(model, weights='', gpus=1, strict=True, resume=False, just_weig
     :param gpus:
     :return:
     """
-    model_weights = torch.load(weights, map_location=get_default_device())
+    model_weights = _load_model_weight_ckpt(weights)
     if not just_weight:
         model_weights = model_weights['optim'] if resume else model_weights['state_dict']
 
