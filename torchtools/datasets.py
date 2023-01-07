@@ -8,7 +8,7 @@ from .loaders import pil_loader
 # import dlib
 
 
-def _mod_crop(im, scala):
+def mod_crop(im, scala):
     w, h = im.size
     return im.crop((0, 0, w - w % scala, h - h % scala))
 
@@ -47,7 +47,7 @@ class SRDataListLR(data.Dataset):
 
         image = pil_loader(self.image_file_list[index], mode=self.mode)
 
-        lr_img = _mod_crop(image, self.scala)
+        lr_img = mod_crop(image, self.scala)
         if self.transform is not None:
             lr_img = self.transform(lr_img)
 
