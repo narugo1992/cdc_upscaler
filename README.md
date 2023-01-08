@@ -1,6 +1,24 @@
 # CDC Image Upscaler
 
+[![PyPI](https://img.shields.io/pypi/v/cdc_upscaler)](https://pypi.org/project/cdc_upscaler/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cdc_upscaler)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/narugo1992/cdc_upscaler/blob/main/examples/cdc_upscaler_example.ipynb)
+![Loc](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/narugo1992/76c126fca51d24785534a1f3c8cac20d/raw/loc.json)
+![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/narugo1992/76c126fca51d24785534a1f3c8cac20d/raw/comments.json)
+
+[![Docs Deploy](https://github.com/narugo1992/cdc_upscaler/workflows/Docs%20Deploy/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Docs+Deploy%22)
+[![Code Test](https://github.com/narugo1992/cdc_upscaler/workflows/Code%20Test/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Code+Test%22)
+[![Package Release](https://github.com/narugo1992/cdc_upscaler/workflows/Package%20Release/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Package+Release%22)
+[![codecov](https://codecov.io/gh/narugo1992/cdc_upscaler/branch/main/graph/badge.svg?token=XJVDP4EFAT)](https://codecov.io/gh/narugo1992/cdc_upscaler)
+
+![GitHub Org's stars](https://img.shields.io/github/stars/narugo1992)
+[![GitHub stars](https://img.shields.io/github/stars/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/network)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/narugo1992/cdc_upscaler)
+[![GitHub issues](https://img.shields.io/github/issues/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/issues)
+[![GitHub pulls](https://img.shields.io/github/issues-pr/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/pulls)
+[![Contributors](https://img.shields.io/github/contributors/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/graphs/contributors)
+[![GitHub license](https://img.shields.io/github/license/narugo1992/cdc_upscaler)](https://github.com/narugo1992/cdc_upscaler/blob/master/LICENSE)
 
 Wrapped tools based
 on [xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution](https://github.com/xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution).
