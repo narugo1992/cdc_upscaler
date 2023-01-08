@@ -24,7 +24,7 @@ from cdc_upscaler import image_upscale
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     original_image = Image.open('images/your input image.png')
-    upscaled_image = image_upscale(original_image)
+    upscaled_image = image_upscale(original_image, 4)
     os.makedirs('output', exist_ok=True)
     upscaled_image.save('output/result.png')
 
