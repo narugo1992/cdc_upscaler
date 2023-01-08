@@ -6,7 +6,6 @@
 ![Loc](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/narugo1992/76c126fca51d24785534a1f3c8cac20d/raw/loc.json)
 ![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/narugo1992/76c126fca51d24785534a1f3c8cac20d/raw/comments.json)
 
-[![Docs Deploy](https://github.com/narugo1992/cdc_upscaler/workflows/Docs%20Deploy/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Docs+Deploy%22)
 [![Code Test](https://github.com/narugo1992/cdc_upscaler/workflows/Code%20Test/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Code+Test%22)
 [![Package Release](https://github.com/narugo1992/cdc_upscaler/workflows/Package%20Release/badge.svg)](https://github.com/narugo1992/cdc_upscaler/actions?query=workflow%3A%22Package+Release%22)
 [![codecov](https://codecov.io/gh/narugo1992/cdc_upscaler/branch/main/graph/badge.svg?token=XJVDP4EFAT)](https://codecov.io/gh/narugo1992/cdc_upscaler)
