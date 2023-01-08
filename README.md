@@ -1,5 +1,7 @@
 # CDC Image Upscaler
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/narugo1992/cdc_upscaler/blob/main/examples/cdc_upscaler_example.ipynb)
+
 Wrapped tools based
 on [xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution](https://github.com/xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution).
 
@@ -31,8 +33,6 @@ if __name__ == '__main__':
 ```
 
 At present, only 4x up-scaling is supported. More features is coming soon.
-
-[Online example](https://colab.research.google.com/drive/1fRvl3yznvEfWMJNo7jdGOC4-mbnTHsay?usp=sharing) on colab. 
 
 This pretrained model is hosted on [hugging face](https://huggingface.co/7eu7d7/CDC_anime), which is provided
 by [7eu7d7](https://github.com/7eu7d7).
