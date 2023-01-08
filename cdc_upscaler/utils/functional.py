@@ -198,7 +198,6 @@ def tensor_merge(blocks, tensor, psize, overlap, pad=True, tensor_shape=None):
     tensor_new = torch.FloatTensor(B, C, H, W)
     h_block = H // psize
     w_block = W // psize
-    # print(tensor.shape, tensor_new.shape)
     for i in range(h_block):
         for j in range(w_block):
             end_h = tensor_new.shape[2] if i + 1 == h_block else (i + 1) * psize

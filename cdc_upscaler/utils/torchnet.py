@@ -1,4 +1,4 @@
-import sys
+import logging
 from collections import OrderedDict
 from functools import lru_cache
 
@@ -29,13 +29,12 @@ def load_weights(model, weights='', gpus=1, strict=True, resume=False, just_weig
     try:
         model.load_state_dict(model_weights, strict=strict)
     except:
-        print('Loading from DataParallel module......')
+        logging.info('Loading from DataParallel module ...')
         model = _rm_module(model, model_weights)
-    print('Loading %s success.....' % weights)
+    logging.info(f'Loading {weights} success!')
 
     if gpus > 1:
         model = nn.DataParallel(model, device_ids=[i for i in range(gpus)])
-    sys.stdout.flush()
     return model
 
 
