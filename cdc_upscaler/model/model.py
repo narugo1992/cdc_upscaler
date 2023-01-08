@@ -196,17 +196,14 @@ class HourGlassNetMultiScaleInt(nn.Module):
     Hour Glass SR Model, Use Mutil-Scale Label(HR_down_Xn) Supervision.
     """
 
-    def __init__(self, in_nc=3, out_nc=3, upscale=4, nf=64, res_type='res', n_mid=2, n_tail=2, n_HG=6,
-                 act_type='leakyrelu', inter_supervis=True, mscale_inter_super=False, share_upsample=False):
+    def __init__(self, in_nc=3, out_nc=3, upscale=4, nf=64, res_type='res',
+                 n_mid=2, n_tail=2, n_HG=6, act_type='leakyrelu', inter_supervis=True):
         super(HourGlassNetMultiScaleInt, self).__init__()
 
         self.n_HG = n_HG
         self.inter_supervis = inter_supervis
-        if upscale == 3:
-            ksize = 3
-        else:
-            ksize = 1
-
+        self.upscale = upscale
+        ksize = 3 if upscale == 3 else 1
         self.conv_in = conv_block(in_nc, nf, kernel_size=3, norm_type=None, act_type=None)
 
         def make_upsample_block(upscale=4, in_ch=64, out_nc=3, kernel_size=3):
@@ -215,7 +212,7 @@ class HourGlassNetMultiScaleInt(nn.Module):
             HR_conv0 = conv_block(nf, nf, kernel_size=3, norm_type=None, act_type='leakyrelu')
             HR_conv1 = conv_block(nf, out_nc, kernel_size=kernel_size, norm_type=None, act_type=None)
             if upscale == 1:
-                return nn.Sequential(LR_conv, HR_conv0, HR_conv1)
+                upsampler = []
             elif upscale == 3:
                 upsampler = upconv_block(nf, nf, 3, act_type=act_type)
             else:
@@ -239,6 +236,7 @@ class HourGlassNetMultiScaleInt(nn.Module):
             setattr(self, 'HG_%d' % i, HG_block)
 
     def forward(self, x):
+        B, C, H, W = x.shape
         x = self.conv_in(x)
         SR_map = []
         result = []
@@ -289,4 +287,6 @@ class HourGlassNetMultiScaleInt(nn.Module):
                     SR_map.append(torch.mean(corner_map, dim=1, keepdim=True))
                 # result.append(sr_feature[:,0:1,:,:])
 
-        return result, SR_map
+        # return result, SR_map
+        output = result[-1]
+        return output.view(B, C, self.upscale, H, self.upscale, W)

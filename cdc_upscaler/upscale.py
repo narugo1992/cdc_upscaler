@@ -107,12 +107,12 @@ def _native_image_upscale(input_image: Union[str, Image.Image], ckpt: Optional[s
             else:
                 input_ = blocks[idx * gpus: (idx + 1) * gpus]
             hr_var = input_.to(get_default_device())
-            sr_var, sr_map = generator(hr_var)
-
-            if isinstance(sr_var, (list, tuple)):
-                sr_var = sr_var[-1]
-
-            results.append(sr_var.to('cpu'))
+            logging.warning(f'{idx}th iter, input: {hr_var.shape!r}')
+            _B, _C, _H, _W = hr_var.shape
+            # sr_var, sr_map = generator(hr_var)
+            sr_var = generator(hr_var)  # sr_var: _B, _C, scale, _H, scale, _W
+            logging.warning(f'{idx}th iter, sr_var: {sr_var.shape!r}')
+            results.append(sr_var.reshape(_B, _C, _H * scala, _W * scala).to('cpu'))
             logging.info(f'Processing Image, Part: {idx + 1} / {iters}')
 
         results = torch.cat(results, dim=0)
