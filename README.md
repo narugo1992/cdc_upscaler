@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
 At present, only 4x up-scaling is supported. More features is coming soon.
 
-This pretrained model is hosted on [hugging face](https://huggingface.co/narugo/cdc_pretrianed_model), which is provided
-by [7eu7d7](https://github.com/7eu7d7).
+[Online example](https://colab.research.google.com/drive/1fRvl3yznvEfWMJNo7jdGOC4-mbnTHsay?usp=sharing) on colab. 
 
+This pretrained model is hosted on [hugging face](https://huggingface.co/7eu7d7/CDC_anime), which is provided
+by [7eu7d7](https://github.com/7eu7d7).
