@@ -64,7 +64,8 @@ def parse_ckpt_name(filename: str):
 def _get_4x_ckpt() -> str:
     return hf_hub_download(
         repo_id='7eu7d7/CDC_anime',
-        filename='HGSR-MHR-anime_X4_280.pth',
+        # filename='HGSR-MHR-anime_X4_280.pth',
+        filename='HGSR-MHR-anime-aug_X4_320.pth',
     )
 
 
