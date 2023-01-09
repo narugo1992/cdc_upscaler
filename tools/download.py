@@ -4,19 +4,14 @@ import shutil
 import click
 from huggingface_hub import hf_hub_download
 
-from tools.base import GLOBAL_CONTEXT_SETTINGS
-
-EXIST_MODELS = [
-    'HGSR-MHR-anime-aug_X4_320.pth',
-    'HGSR-MHR-anime_X4_280.pth',
-]
+from tools.base import GLOBAL_CONTEXT_SETTINGS, EXIST_TORCH_MODELS
 
 
 @click.command(help='Export torch model to onnx format',
                context_settings={**GLOBAL_CONTEXT_SETTINGS})
 @click.option('--repo_id', 'repo_id', type=str, default='7eu7d7/CDC_anime',
               help="Repository id on hugging face.", show_default=True)
-@click.option('--filename', 'filename', type=click.Choice(EXIST_MODELS), required=True,
+@click.option('--filename', 'filename', type=click.Choice(EXIST_TORCH_MODELS), required=True,
               help='Filename in repository.')
 @click.option('--output', '-o', 'output_filename', type=str, required=True,
               help='Output model file on local drive.')
