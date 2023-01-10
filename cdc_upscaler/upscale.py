@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import warnings
@@ -38,6 +39,7 @@ def _open_onnx_model(ckpt: str, provider: str) -> InferenceSession:
     if provider == "CPUExecutionProvider":
         options.intra_op_num_threads = os.cpu_count()
 
+    logging.info(f'Model {ckpt!r} loaded with provider {provider!r}')
     return InferenceSession(ckpt, options, [provider])
 
 
@@ -47,6 +49,9 @@ def _get_onnx_4x_model() -> str:
         # filename='HGSR-MHR-anime_X4_280.onnx',
         filename='HGSR-MHR-anime-aug_X4_320.onnx',
     )
+
+
+INPUT_UNIT = 16
 
 
 def _native_image_upscale(image: Union[str, Image.Image], ckpt: str, scala: Optional[int] = None,
@@ -76,10 +81,16 @@ def _native_image_upscale(image: Union[str, Image.Image], ckpt: str, scala: Opti
     iters = (divided.shape[0] + batch - 1) // batch
     results = []
     for i in range(iters):
+        logging.info(f'Inference {i + 1} / {iters} ...')
         input_ = divided[i * batch: (i + 1) * batch]
         b_batch, b_channels, b_height, b_width = input_.shape
-        output, = model.run(['output'], {'input': input_})
-        results.append(output.reshape(b_batch, b_channels, b_height * scala, b_width * scala))
+        nb_height = b_height + (0 if b_height % INPUT_UNIT == 0 else INPUT_UNIT - b_height % INPUT_UNIT)
+        nb_width = b_width + (0 if b_width % INPUT_UNIT == 0 else INPUT_UNIT - b_width % INPUT_UNIT)
+        real_input = np.pad(input_, ((0, 0), (0, 0), (0, nb_height - b_height), (0, nb_width - b_width)),
+                            mode='reflect')
+        output, = model.run(['output'], {'input': real_input})
+        results.append(output.reshape(b_batch, b_channels, nb_height * scala, nb_width * scala)
+                       [:, :, :b_height * scala, :b_width * scala])
 
     results = np.concatenate(results)
     final_data = array_merge(results, (o_batch, o_channels, o_height * scala, o_width * scala),
@@ -132,8 +143,10 @@ def image_upscale(image: Union[str, Image.Image], scale: float,
 
         scales.append(found)
         scale /= found
+    logging.info(f'Scheduled upscale plan: {[*scales, scale]!r}')
 
-    for scale_item in scales:
+    for i, scale_item in enumerate(scales):
+        logging.info(f'Upscaling step {i + 1} / {len(scales)} - {scale_item}x ...')
         image = _native_image_upscale(
             image, _real_ckpts[scale_item](), scale_item, provider,
             psize, overlap, batch, rgb_range
