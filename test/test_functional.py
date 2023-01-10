@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from cdc_upscaler.utils.func import to_ndarray, to_pil_image, array_divide, array_merge
+from cdc_upscaler.functional import to_ndarray, to_pil_image, array_divide, array_merge
 from tools.utils.functional import to_tensor, tensor_divide, tensor_merge
 
 
@@ -17,7 +17,7 @@ def batched_image_array(original_image_array) -> np.ndarray:
 
 
 @pytest.mark.unittest
-class TestUtilsFunctional:
+class TestFunctional:
     def test_to_ndarray(self, original_image_pil):
         torch_result = to_tensor(original_image_pil)
         np_result = to_ndarray(original_image_pil)

@@ -1,4 +1,4 @@
-torch
+onnxruntime
 pillow
 numpy
 huggingface_hub
