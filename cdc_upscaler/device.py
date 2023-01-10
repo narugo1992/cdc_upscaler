@@ -1,12 +1,6 @@
 from typing import Optional
 
-import torch
 from onnxruntime import get_available_providers, get_all_providers
-
-
-def get_default_device():
-    return torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
 
 alias = {
     'gpu': "CUDAExecutionProvider",
