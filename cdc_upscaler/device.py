@@ -1,3 +1,4 @@
+import logging
 import shutil
 from typing import Optional
 
@@ -8,10 +9,13 @@ def _ensure_onnxruntime():
     try:
         import onnxruntime
     except (ImportError, ModuleNotFoundError):
+        logging.warning('Onnx runtime not installed, preparing to install ...')
         if shutil.which('nvidia-smi'):
-            pip_install(['onnxruntime-gpu'])
+            logging.info('Installing onnxruntime-gpu ...')
+            pip_install(['onnxruntime-gpu'], silent=True)
         else:
-            pip_install(['onnxruntime'])
+            logging.info('Installing onnxruntime (cpu) ...')
+            pip_install(['onnxruntime'], silent=True)
 
 
 _ensure_onnxruntime()
