@@ -23,7 +23,7 @@ def _add_refresh_command(cli: click.Group) -> click.Group:
     def refresh(psize: int, overlap: int):
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s [%(levelname)s][v2raycli] %(message)s",
+            format="%(asctime)s [%(levelname)s][cdc_tools] %(message)s",
             datefmt='%Y/%m/%d %H:%M:%S',
         )
         iters = tqdm(EXAMPLE_IMAGES)
