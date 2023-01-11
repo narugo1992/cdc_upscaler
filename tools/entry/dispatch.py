@@ -5,6 +5,7 @@ from cdc_upscaler.config.meta import __TITLE__, __VERSION__
 from .base import GLOBAL_CONTEXT_SETTINGS
 from .download import _add_download_subcommand
 from .list import _add_list_command
+from .refresh import _add_refresh_command
 from .trans import _add_trans_command
 
 
@@ -22,6 +23,7 @@ def print_version(ctx: Context, param: Option, value: bool) -> None:
     ctx.exit()
 
 
+@_add_refresh_command
 @_add_trans_command
 @_add_list_command
 @_add_download_subcommand

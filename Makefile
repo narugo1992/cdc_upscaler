@@ -20,6 +20,8 @@ RANGE_TEST_DIR := ${TEST_DIR}/${RANGE_DIR}
 RANGE_SRC_DIR  := ${SRC_DIR}/${RANGE_DIR}
 
 COV_TYPES ?= xml term-missing
+PSIZE     ?= 256
+OVERLAP   ?= 32
 
 package:
 	$(PYTHON) -m build --sdist --wheel --outdir ${DIST_DIR}
@@ -43,3 +45,6 @@ trans_all:
 		echo "Transforming ${CKPTS_DIR}/$$model to ${ONNXS_DIR}/$${model%.*}.onnx ..." && \
 		${MODEL_TOOLS} trans -i ${CKPTS_DIR}/$$model -o ${ONNXS_DIR}/$${model%.*}.onnx; \
 	done;
+
+refresh:
+	${MODEL_TOOLS} --psize=${PSIZE} --overlap=${OVERLAP}

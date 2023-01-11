@@ -4,3 +4,4 @@ onnxoptimizer
 onnxsim
 click>=7
 hbutils>=0.7
+tqdm
