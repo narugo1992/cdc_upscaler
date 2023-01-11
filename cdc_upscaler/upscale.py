@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import warnings
+from functools import lru_cache
 from typing import Union, Optional, Mapping, Callable, List, Tuple
 
 import numpy as np
@@ -33,6 +34,7 @@ def parse_ckpt_name(filename: str):
         raise ValueError(f'Unrecognized filename of ckpt - {filename!r}.')
 
 
+@lru_cache()
 def _open_onnx_model(ckpt: str, provider: str) -> InferenceSession:
     options = SessionOptions()
     options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
