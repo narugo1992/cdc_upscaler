@@ -1210,4 +1210,6 @@ fabric.properties
 /images
 /output
 /ckpt
+/ckpts
 /.benchmarks
+/onnxs

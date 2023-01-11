@@ -1,0 +1,5 @@
+torch
+onnx
+onnxoptimizer
+onnxsim
+click>=7

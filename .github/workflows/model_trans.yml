@@ -1,0 +1,53 @@
+name: Release Test
+
+on: workflow_dispatch
+
+jobs:
+  source_release:
+    name: Try package the source
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'ubuntu-20.04'
+        python-version:
+          - '3.8'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 20
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up python dependences
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade flake8 setuptools wheel twine
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-build.txt ]; then pip install -r requirements-tools.txt; fi
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          pip install --upgrade build
+      - name: Setup git lfs
+        run: |
+          git lfs install
+      - name: Clone model repository from hugging face
+        run: |
+          git clone https://huggingface.co/narugo/CDC_anime_onnx
+          ls -al CDC_anime_onnx
+      - name: Transform models to onnx format
+        env:
+          ONNXS_DIR: CDC_anime_onnx
+        run: |
+          make trans_all
+          ls -al CDC_anime_onnx
+      - name: Push models to hugging face repostory
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd CDC_anime_onnx
+          git add -A && git commit -a -m "dev(narugo): auto sync $(date -R)"
+          git push https://narugo:$HF_TOKEN@huggingface.co/narugo/CDC_anime_onnx main

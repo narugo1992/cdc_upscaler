@@ -1,56 +1,29 @@
 import logging
 import os
-import os.path
 import re
 import warnings
 from functools import lru_cache
-from typing import Optional, Union, Mapping, Callable
+from typing import Union, Optional, Mapping, Callable, List, Tuple
 
-import torch
+import numpy as np
 from PIL import Image
 from huggingface_hub import hf_hub_download
+from onnxruntime import InferenceSession, SessionOptions, GraphOptimizationLevel
 
-from .model import HourGlassNetMultiScaleInt
-from .utils import get_default_device, tensor_merge, tensor_divide, to_pil_image, to_tensor, load_weights
-
-
-@lru_cache()
-def load_cdc_model(ckpt: Optional[str], scala=4, inc=3, n_HG=6, inter_supervis=True, gpus=1):
-    generator = HourGlassNetMultiScaleInt(
-        in_nc=inc, out_nc=inc, upscale=scala,
-        nf=64, res_type='res', n_mid=2, n_HG=n_HG, inter_supervis=inter_supervis
-    )
-    ckpt = os.path.normcase(os.path.normpath(os.path.abspath(ckpt)))
-    generator = load_weights(generator, ckpt, gpus, just_weight=False, strict=True)
-    generator = generator.to(get_default_device())
-    generator.eval()
-    return generator
+from .device import get_onnx_provider
+from .functional import to_ndarray, array_divide, array_merge, to_pil_image
 
 
-def mod_crop(im, scala):
-    w, h = im.size
-    return im.crop((0, 0, w - w % scala, h - h % scala))
-
-
-def image_to_tensor(image: Image.Image, scala: int = 4, transform=None, rgb_range: float = 1.0) -> torch.Tensor:
-    lr_img = mod_crop(image.convert('RGB'), scala)
-    if transform is not None:
-        lr_img = transform(lr_img)
-
-    tensor = to_tensor(lr_img) * rgb_range
-    return tensor.reshape((1, *tensor.shape))
-
-
-def open_image(image: Union[str, Image.Image]) -> Image.Image:
-    if isinstance(image, Image.Image):
-        return image
-    elif isinstance(image, str):
+def _open_image(image: Union[str, Image.Image]) -> Image.Image:
+    if isinstance(image, str):
         return Image.open(image)
+    elif isinstance(image, Image.Image):
+        return image
     else:
         raise TypeError(f'Unknown image type - {image!r}.')
 
 
-CKPT_NAME_PATTERN = re.compile(r'^HGSR-MHR-(?P<type>anime|anime-aug)_X(?P<scale>\d+)_(?P<steps>\d+)\.pth$')
+CKPT_NAME_PATTERN = re.compile(r'^HGSR-MHR-(?P<type>anime|anime-aug)_X(?P<scale>\d+)_(?P<steps>\d+)\.onnx$')
 
 
 def parse_ckpt_name(filename: str):
@@ -61,24 +34,33 @@ def parse_ckpt_name(filename: str):
         raise ValueError(f'Unrecognized filename of ckpt - {filename!r}.')
 
 
-def _get_4x_ckpt() -> str:
+@lru_cache()
+def _open_onnx_model(ckpt: str, provider: str) -> InferenceSession:
+    options = SessionOptions()
+    options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
+    if provider == "CPUExecutionProvider":
+        options.intra_op_num_threads = os.cpu_count()
+
+    logging.info(f'Model {ckpt!r} loaded with provider {provider!r}')
+    return InferenceSession(ckpt, options, [provider])
+
+
+def _get_onnx_4x_model() -> str:
     return hf_hub_download(
-        repo_id='7eu7d7/CDC_anime',
-        # filename='HGSR-MHR-anime_X4_280.pth',
-        filename='HGSR-MHR-anime-aug_X4_320.pth',
+        repo_id='narugo/CDC_anime_onnx',
+        # filename='HGSR-MHR-anime_X4_280.onnx',
+        filename='HGSR-MHR-anime-aug_X4_320.onnx',
     )
 
 
-_DEFAULT_CKPTS: Mapping[int, Callable[[], str]] = {
-    4: _get_4x_ckpt
-}
+INPUT_UNIT = 16
 
 
-def _native_image_upscale(input_image: Union[str, Image.Image], ckpt: Optional[str] = None,
-                          psize=512, overlap=64, scala=None, inc=3, n_HG=6, rgb_range=1.0,
-                          inter_supervis=True, gpus=1) -> Image.Image:
-    if not ckpt:
-        ckpt = _get_4x_ckpt()
+def _native_image_upscale(image: Union[str, Image.Image], ckpt: str, scala: Optional[int] = None,
+                          provider: Optional[str] = None, psize: int = 512, overlap=64, batch: int = 1,
+                          rgb_range: float = 1.0) -> Image.Image:
+    ckpt = os.path.normcase(os.path.normpath(os.path.abspath(ckpt)))
+    model = _open_onnx_model(ckpt, get_onnx_provider(provider))
 
     try:
         _, model_scala, _ = parse_ckpt_name(ckpt)
@@ -90,47 +72,69 @@ def _native_image_upscale(input_image: Union[str, Image.Image], ckpt: Optional[s
         if not scala:
             raise ValueError('Scala can not be extracted from ckpt\'s filename, please provide the scala of model.')
 
-    # Init Net
-    logging.info('Build Generator Net...')
+    image: Image.Image = _open_image(image)
+    raw_data = np.expand_dims(to_ndarray(image) * rgb_range, axis=0)
+    o_batch, o_channels, o_height, o_width = raw_data.shape
+    assert o_batch == 1 and o_channels == 3
 
-    generator = load_cdc_model(ckpt, scala, inc, n_HG, inter_supervis, gpus)
-    with torch.no_grad():
-        tensor = image_to_tensor(open_image(input_image), scala=scala, rgb_range=rgb_range)
-        B, C, H, W = tensor.shape
-        blocks = tensor_divide(tensor, psize, overlap)
-        blocks = torch.cat(blocks, dim=0)
-        results = []
+    divided = array_divide(raw_data, psize, overlap)
+    divided = np.concatenate(divided)
 
-        iters = blocks.shape[0] // gpus if blocks.shape[0] % gpus == 0 else blocks.shape[0] // gpus + 1
-        for idx in range(iters):
-            if idx + 1 == iters:
-                input_ = blocks[idx * gpus:]
-            else:
-                input_ = blocks[idx * gpus: (idx + 1) * gpus]
-            hr_var = input_.to(get_default_device())
-            logging.warning(f'{idx}th iter, input: {hr_var.shape!r}')
-            _B, _C, _H, _W = hr_var.shape
-            # sr_var, sr_map = generator(hr_var)
-            sr_var = generator(hr_var)  # sr_var: _B, _C, scale, _H, scale, _W
-            logging.warning(f'{idx}th iter, sr_var: {sr_var.shape!r}')
-            results.append(sr_var.reshape(_B, _C, _H * scala, _W * scala).to('cpu'))
-            logging.info(f'Processing Image, Part: {idx + 1} / {iters}')
+    iters = (divided.shape[0] + batch - 1) // batch
+    results = []
+    for i in range(iters):
+        logging.info(f'Inference {i + 1} / {iters} ...')
+        input_ = divided[i * batch: (i + 1) * batch]
+        b_batch, b_channels, b_height, b_width = input_.shape
+        nb_height = b_height + (0 if b_height % INPUT_UNIT == 0 else INPUT_UNIT - b_height % INPUT_UNIT)
+        nb_width = b_width + (0 if b_width % INPUT_UNIT == 0 else INPUT_UNIT - b_width % INPUT_UNIT)
+        real_input = np.pad(input_, ((0, 0), (0, 0), (0, nb_height - b_height), (0, nb_width - b_width)),
+                            mode='reflect')
+        output, = model.run(['output'], {'input': real_input})
+        results.append(output.reshape(b_batch, b_channels, nb_height * scala, nb_width * scala)
+                       [:, :, :b_height * scala, :b_width * scala])
 
-        results = torch.cat(results, dim=0)
-        sr_img = tensor_merge(results, None, psize * scala, overlap * scala,
-                              tensor_shape=(B, C, H * scala, W * scala))
-
-    return to_pil_image(torch.clamp(sr_img[0].cpu() / rgb_range, min=0.0, max=1.0))
+    results = np.concatenate(results)
+    final_data = array_merge(results, (o_batch, o_channels, o_height * scala, o_width * scala),
+                             psize * scala, overlap * scala)
+    f_batch, f_channels, f_height, f_width = final_data.shape
+    assert f_batch == 1 and f_channels == 3 and f_height == o_height * scala and f_width == o_width * scala
+    return to_pil_image(np.clip(final_data[0] / rgb_range, a_min=0.0, a_max=1.0))
 
 
-def image_upscale(input_image: Union[str, Image.Image], scale: float,
-                  psize=512, overlap=64, inc=3, n_HG=6, rgb_range=1.0,
-                  inter_supervis=True, gpus=1) -> Image.Image:
-    image = open_image(input_image)
+_DEFAULT_CKPTS: Mapping[int, Callable[[], str]] = {
+    4: _get_onnx_4x_model,
+}
+
+
+def _parse_custom_ckpt(ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int, str]]]]) -> Mapping[int, str]:
+    data = {}
+    if isinstance(ckpt, dict):
+        ckpt = list(ckpt.items())
+
+    for i, item in enumerate(ckpt):
+        if isinstance(item, str):
+            scala, path = parse_ckpt_name(item), item
+        elif isinstance(item, tuple):
+            scala, path = item
+        else:
+            raise TypeError(f'Unknown custom ckpt type on {i}th - {item!r}.')
+
+        data[scala] = path
+
+    return data
+
+
+def image_upscale(image: Union[str, Image.Image], scale: float,
+                  ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int, str]]], None] = None,
+                  provider: Optional[str] = None, psize: int = 512, overlap=64, batch: int = 1,
+                  rgb_range: float = 1.0) -> Image.Image:
+    image: Image.Image = _open_image(image)
     origin_width, origin_height = image.size
     target_width, target_height = map(lambda x: int(round(x * scale)), (origin_width, origin_height))
 
-    _model_scales = sorted(_DEFAULT_CKPTS.keys())
+    _real_ckpts = {**_DEFAULT_CKPTS, **_parse_custom_ckpt(ckpt or {})}
+    _model_scales = sorted(_real_ckpts.keys())
     scales = []
     while scale > 1.0:
         found = None
@@ -141,11 +145,13 @@ def image_upscale(input_image: Union[str, Image.Image], scale: float,
 
         scales.append(found)
         scale /= found
+    logging.info(f'Scheduled upscale plan: {[*scales, scale]!r}')
 
-    for scale_item in scales:
+    for i, scale_item in enumerate(scales):
+        logging.info(f'Upscaling step {i + 1} / {len(scales)} - {scale_item}x ...')
         image = _native_image_upscale(
-            image, _DEFAULT_CKPTS[scale_item](), psize, overlap, scale_item,
-            inc, n_HG, rgb_range, inter_supervis, gpus
+            image, _real_ckpts[scale_item](), scale_item, provider,
+            psize, overlap, batch, rgb_range
         )
 
     return image.resize((target_width, target_height))

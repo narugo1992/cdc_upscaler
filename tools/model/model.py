@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -196,16 +197,18 @@ class HourGlassNetMultiScaleInt(nn.Module):
     Hour Glass SR Model, Use Mutil-Scale Label(HR_down_Xn) Supervision.
     """
 
+    # noinspection PyUnusedLocal
     def __init__(self, in_nc=3, out_nc=3, upscale=4, nf=64, res_type='res',
                  n_mid=2, n_tail=2, n_HG=6, act_type='leakyrelu', inter_supervis=True):
         super(HourGlassNetMultiScaleInt, self).__init__()
-
+        assert n_HG >= 4, f'n_HG should be no less than 4, but {n_HG!r} found.'
         self.n_HG = n_HG
         self.inter_supervis = inter_supervis
         self.upscale = upscale
         ksize = 3 if upscale == 3 else 1
         self.conv_in = conv_block(in_nc, nf, kernel_size=3, norm_type=None, act_type=None)
 
+        # noinspection PyUnusedLocal
         def make_upsample_block(upscale=4, in_ch=64, out_nc=3, kernel_size=3):
             n_upscale = 1 if upscale == 3 else int(math.log(upscale, 2))
             LR_conv = conv_block(nf, nf, kernel_size=3, norm_type=None, act_type=None, mode='CNA')
@@ -214,7 +217,7 @@ class HourGlassNetMultiScaleInt(nn.Module):
             if upscale == 1:
                 upsampler = []
             elif upscale == 3:
-                upsampler = upconv_block(nf, nf, 3, act_type=act_type)
+                upsampler = [upconv_block(nf, nf, 3, act_type=act_type)]
             else:
                 upsampler = [upconv_block(nf, nf, act_type=act_type) for _ in range(n_upscale)]
             return nn.Sequential(LR_conv, *upsampler, HR_conv0, HR_conv1)
@@ -238,55 +241,49 @@ class HourGlassNetMultiScaleInt(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
         x = self.conv_in(x)
-        SR_map = []
-        result = []
         out = x
 
         # Multi-Scale supervise, [2, 2, 2] for 6, [2, 3, 3] for 8
-        super_block_idx = [1, self.n_HG // 2, self.n_HG - 1]
+        flat_map, edge_map = None, None
+        srout_flat, srout_edge = None, None
+        output: Optional[torch.Tensor] = None
 
         for i in range(self.n_HG):
             out, out_inter = getattr(self, 'HG_%d' % i)(out)
-            if i in super_block_idx:
-                if i == self.n_HG - 1:
-                    sr_feature = out.mul(0.2) + x
-                else:
-                    sr_feature = out_inter
+            if i == 1:
+                sr_feature = out_inter
+                srout_flat = self.upsample_flat(sr_feature)
+                flat_map = self.flat_map(sr_feature)
+            elif i == self.n_HG // 2:
+                sr_feature = out_inter
+                srout_edge = self.upsample_edge(sr_feature)
+                edge_map = self.edge_map(sr_feature)
+            elif i == self.n_HG - 1:
+                sr_feature = out.mul(0.2) + x
+                srout_corner = self.upsample_corner(sr_feature)
+                corner_map = self.corner_map(sr_feature)
 
-                if super_block_idx.index(i) == 0:
-                    srout_flat = self.upsample_flat(sr_feature)
-                    flat_map = self.flat_map(sr_feature)
-                    result.append(srout_flat)
-                elif super_block_idx.index(i) == 1:
-                    srout_edge = self.upsample_edge(sr_feature)
-                    edge_map = self.edge_map(sr_feature)
-                    result.append(srout_edge)
-                elif super_block_idx.index(i) == 2:
-                    srout_corner = self.upsample_corner(sr_feature)
-                    corner_map = self.corner_map(sr_feature)
-                    result.append(srout_corner)
-                    flat_r, flat_g, flat_b = flat_map.split(split_size=1, dim=1)
-                    edge_r, edge_g, edge_b = edge_map.split(split_size=1, dim=1)
-                    corner_r, corner_g, corner_b = corner_map.split(split_size=1, dim=1)
-                    r_map = torch.cat((flat_r, edge_r, corner_r), dim=1)
-                    g_map = torch.cat((flat_g, edge_g, corner_g), dim=1)
-                    b_map = torch.cat((flat_b, edge_b, corner_b), dim=1)
-                    r_map = F.softmax(r_map, dim=1)
-                    g_map = F.softmax(g_map, dim=1)
-                    b_map = F.softmax(b_map, dim=1)
-                    flat_r, edge_r, corner_r = r_map.split(split_size=1, dim=1)
-                    flat_g, edge_g, corner_g = g_map.split(split_size=1, dim=1)
-                    flat_b, edge_b, corner_b = b_map.split(split_size=1, dim=1)
-                    flat_map = torch.cat((flat_r, flat_g, flat_b), dim=1)
-                    edge_map = torch.cat((edge_r, edge_g, edge_b), dim=1)
-                    corner_map = torch.cat((corner_r, corner_g, corner_b), dim=1)
-                    srout = flat_map * srout_flat + edge_map * srout_edge + corner_map * srout_corner
-                    result.append(srout)
-                    SR_map.append(torch.mean(flat_map, dim=1, keepdim=True))
-                    SR_map.append(torch.mean(edge_map, dim=1, keepdim=True))
-                    SR_map.append(torch.mean(corner_map, dim=1, keepdim=True))
-                # result.append(sr_feature[:,0:1,:,:])
+                assert flat_map is not None
+                assert edge_map is not None
+                flat_r, flat_g, flat_b = flat_map.split(split_size=1, dim=1)
+                edge_r, edge_g, edge_b = edge_map.split(split_size=1, dim=1)
+                corner_r, corner_g, corner_b = corner_map.split(split_size=1, dim=1)
+                r_map = torch.cat((flat_r, edge_r, corner_r), dim=1)
+                g_map = torch.cat((flat_g, edge_g, corner_g), dim=1)
+                b_map = torch.cat((flat_b, edge_b, corner_b), dim=1)
+                r_map = F.softmax(r_map, dim=1)
+                g_map = F.softmax(g_map, dim=1)
+                b_map = F.softmax(b_map, dim=1)
+                flat_r, edge_r, corner_r = r_map.split(split_size=1, dim=1)
+                flat_g, edge_g, corner_g = g_map.split(split_size=1, dim=1)
+                flat_b, edge_b, corner_b = b_map.split(split_size=1, dim=1)
+                flat_map = torch.cat((flat_r, flat_g, flat_b), dim=1)
+                edge_map = torch.cat((edge_r, edge_g, edge_b), dim=1)
+                corner_map = torch.cat((corner_r, corner_g, corner_b), dim=1)
 
-        # return result, SR_map
-        output = result[-1]
+                assert srout_flat is not None
+                assert srout_edge is not None
+                output = flat_map * srout_flat + edge_map * srout_edge + corner_map * srout_corner
+
+        assert isinstance(output, torch.Tensor)
         return output.view(B, C, self.upscale, H, self.upscale, W)
