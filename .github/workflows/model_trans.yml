@@ -27,9 +27,9 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install --upgrade flake8 setuptools wheel twine
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-build.txt ]; then pip install -r requirements-tools.txt; fi
-          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          pip install -r requirements.txt
+          pip install -r requirements-tools.txt
+          pip install -r requirements-test.txt
           pip install --upgrade build
       - name: Setup git lfs
         run: |
