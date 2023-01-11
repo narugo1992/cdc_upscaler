@@ -47,5 +47,6 @@ if __name__ == '__main__':
 
 ```
 
-This pretrained model is hosted on [hugging face](https://huggingface.co/7eu7d7/CDC_anime), which is provided
-by [7eu7d7](https://github.com/7eu7d7).
+This pretrained model is hosted on [7eu7d7/CDC_anime](https://huggingface.co/7eu7d7/CDC_anime), which is provided
+by [7eu7d7](https://github.com/7eu7d7). The onnx model used is hosted
+on [narugo/CDC_anime_onnx](https://huggingface.co/narugo/CDC_anime_onnx/tree/main).
