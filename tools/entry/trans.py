@@ -46,7 +46,7 @@ def _add_trans_command(cli: click.Group) -> click.Group:
               verbose: bool, no_optimize: bool):
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s [%(levelname)s][v2raycli] %(message)s",
+            format="%(asctime)s [%(levelname)s][cdc_tools] %(message)s",
             datefmt='%Y/%m/%d %H:%M:%S',
         )
         model = get_torch_model(ckpt=input_model_filename)

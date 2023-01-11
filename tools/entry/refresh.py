@@ -23,14 +23,14 @@ def _add_refresh_command(cli: click.Group) -> click.Group:
     def refresh(psize: int, overlap: int):
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s [%(levelname)s][v2raycli] %(message)s",
+            format="%(asctime)s [%(levelname)s][cdc_tools] %(message)s",
             datefmt='%Y/%m/%d %H:%M:%S',
         )
         iters = tqdm(EXAMPLE_IMAGES)
         for i, (filename, scale) in enumerate(iters, start=1):
             iters.set_description(f'{i}th - {filename} x{scale}')
             srcfile = os.path.join('test', 'testfile', filename)
-            f_body, f_ext = os.path.split(filename)
+            f_body, f_ext = os.path.splitext(filename)
             dstfile = os.path.join('test', 'testfile', f'{f_body}_x{scale}{f_ext}')
 
             new_image = image_upscale(srcfile, scale=scale, psize=psize, overlap=overlap)
