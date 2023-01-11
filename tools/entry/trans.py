@@ -44,7 +44,11 @@ def _add_trans_command(cli: click.Group) -> click.Group:
                   help='Do not optimize the model', show_default=True)
     def trans(input_model_filename: str, output_model_filename: str, opset_version: int,
               verbose: bool, no_optimize: bool):
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s][v2raycli] %(message)s",
+            datefmt='%Y/%m/%d %H:%M:%S',
+        )
         model = get_torch_model(ckpt=input_model_filename)
         example_input = torch.randn((1, 3, 640, 640))
 
