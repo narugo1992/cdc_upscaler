@@ -8,6 +8,10 @@ from typing import Union, Optional, Mapping, Callable, List, Tuple
 import numpy as np
 from PIL import Image
 from huggingface_hub import hf_hub_download
+
+from .device import _ensure_onnxruntime
+
+_ensure_onnxruntime()
 from onnxruntime import InferenceSession, SessionOptions, GraphOptimizationLevel
 
 from .device import get_onnx_provider

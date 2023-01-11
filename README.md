@@ -25,8 +25,7 @@ on [xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution](h
 First you need to install this with `pip`:
 
 ```shell
-pip install cdc_upscaler       # on cpu-only machine
-pip install cdc_upscaler[gpu]  # when you have gpu
+pip install cdc_upscaler
 ```
 
 Here is a simple example:
@@ -42,9 +41,9 @@ from cdc_upscaler import image_upscale
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     original_image = Image.open('images/your input image.png')
-    
+
     # any scale is supported, such as 1.5, 2, even 6 (which may take some more time)
-    upscaled_image = image_upscale(original_image, scale=4)  
+    upscaled_image = image_upscale(original_image, scale=4)
     os.makedirs('output', exist_ok=True)
     upscaled_image.save('output/result.png')
 

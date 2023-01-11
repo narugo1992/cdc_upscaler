@@ -1,5 +1,20 @@
+import shutil
 from typing import Optional
 
+from hbutils.system import pip_install
+
+
+def _ensure_onnxruntime():
+    try:
+        import onnxruntime
+    except ImportError:
+        if shutil.which('nvidia-smi'):
+            pip_install(['onnxruntime-gpu'])
+        else:
+            pip_install(['onnxruntime'])
+
+
+_ensure_onnxruntime()
 from onnxruntime import get_available_providers, get_all_providers
 
 alias = {
