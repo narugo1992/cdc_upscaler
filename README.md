@@ -41,11 +41,18 @@ from cdc_upscaler import image_upscale
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     original_image = Image.open('images/your input image.png')
-    upscaled_image = image_upscale(original_image, scale=4)
+    
+    # any scale is supported, such as 1.5, 2, even 6 (which may take some more time)
+    upscaled_image = image_upscale(original_image, scale=4)  
     os.makedirs('output', exist_ok=True)
     upscaled_image.save('output/result.png')
 
 ```
+
+| **#** |                                                  **original**                                                  |                                                        **4x**                                                        |
+|:-----:|:--------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------:|
+|   1   |        ![angelina.png](https://github.com/narugo1992/cdc_upscaler/blob/main/test/testfile/angelina.png)        |        ![angelina_x4.png](https://github.com/narugo1992/cdc_upscaler/blob/main/test/testfile/angelina_x4.png)        |
+|   2   | ![angelina_elite2.png](https://github.com/narugo1992/cdc_upscaler/blob/main/test/testfile/angelina_elite2.png) | ![angelina_elite2_x4.png](https://github.com/narugo1992/cdc_upscaler/blob/main/test/testfile/angelina_elite2_x4.png) |
 
 This pretrained model is hosted on [7eu7d7/CDC_anime](https://huggingface.co/7eu7d7/CDC_anime), which is provided
 by [7eu7d7](https://github.com/7eu7d7). The onnx model used is hosted
