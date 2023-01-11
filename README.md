@@ -25,7 +25,8 @@ on [xiezw5/Component-Divide-and-Conquer-for-Real-World-Image-Super-Resolution](h
 First you need to install this with `pip`:
 
 ```shell
-pip install cdc_upscaler
+pip install cdc_upscaler       # on cpu-only machine
+pip install cdc_upscaler[gpu]  # when you have gpu
 ```
 
 Here is a simple example:
