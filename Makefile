@@ -47,4 +47,4 @@ trans_all:
 	done;
 
 refresh:
-	${MODEL_TOOLS} --psize=${PSIZE} --overlap=${OVERLAP}
+	${MODEL_TOOLS} refresh --psize=${PSIZE} --overlap=${OVERLAP}
