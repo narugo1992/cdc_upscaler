@@ -1,3 +1,4 @@
+import logging
 import os.path
 
 import click
@@ -20,6 +21,11 @@ def _add_refresh_command(cli: click.Group) -> click.Group:
     @click.option('--overlap', 'overlap', type=int, default=32,
                   help='Overlap for image upscale.', show_default=True)
     def refresh(psize: int, overlap: int):
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s][v2raycli] %(message)s",
+            datefmt='%Y/%m/%d %H:%M:%S',
+        )
         iters = tqdm(EXAMPLE_IMAGES)
         for i, (filename, scale) in enumerate(iters, start=1):
             iters.set_description(f'{i}th - {filename} x{scale}')
