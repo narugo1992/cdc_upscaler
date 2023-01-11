@@ -1,4 +1,4 @@
-name: Release Test
+name: Onnx Model Export
 
 on: workflow_dispatch
 
