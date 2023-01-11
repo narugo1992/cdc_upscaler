@@ -12,8 +12,8 @@ TESTFILE_DIR  := ${TEST_DIR}/testfile
 SRC_DIR       := ${PROJ_DIR}/cdc_upscaler
 TEMPLATES_DIR := ${PROJ_DIR}/templates
 RESOURCE_DIR  := ${PROJ_DIR}/resource
-CKPTS_DIR     := ${PROJ_DIR}/ckpts
-ONNXS_DIR     := ${PROJ_DIR}/onnxs
+CKPTS_DIR     ?= ${PROJ_DIR}/ckpts
+ONNXS_DIR     ?= ${PROJ_DIR}/onnxs
 
 RANGE_DIR      ?= .
 RANGE_TEST_DIR := ${TEST_DIR}/${RANGE_DIR}
