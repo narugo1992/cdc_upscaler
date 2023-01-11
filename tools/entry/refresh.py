@@ -30,7 +30,7 @@ def _add_refresh_command(cli: click.Group) -> click.Group:
         for i, (filename, scale) in enumerate(iters, start=1):
             iters.set_description(f'{i}th - {filename} x{scale}')
             srcfile = os.path.join('test', 'testfile', filename)
-            f_body, f_ext = os.path.split(filename)
+            f_body, f_ext = os.path.splitext(filename)
             dstfile = os.path.join('test', 'testfile', f'{f_body}_x{scale}{f_ext}')
 
             new_image = image_upscale(srcfile, scale=scale, psize=psize, overlap=overlap)
