@@ -49,4 +49,5 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd CDC_anime_onnx
-          git push https://narugo:$HF_TOKEN@huggingface.co/spaces/narugo/CDC_anime_onnx main
+          git add -A && git commit -a -m "dev(narugo): auto sync $(date -R)"
+          git push https://narugo:$HF_TOKEN@huggingface.co/narugo/CDC_anime_onnx main
