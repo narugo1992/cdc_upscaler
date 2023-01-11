@@ -49,5 +49,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd CDC_anime_onnx
+          git config user.name 'narugo1992'
+          git config user.email 'narugo@126.com'
           git add -A && git commit -a -m "dev(narugo): auto sync $(date -R)"
           git push https://narugo:$HF_TOKEN@huggingface.co/narugo/CDC_anime_onnx main
