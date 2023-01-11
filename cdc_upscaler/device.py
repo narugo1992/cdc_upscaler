@@ -7,7 +7,7 @@ from hbutils.system import pip_install
 def _ensure_onnxruntime():
     try:
         import onnxruntime
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         if shutil.which('nvidia-smi'):
             pip_install(['onnxruntime-gpu'])
         else:
