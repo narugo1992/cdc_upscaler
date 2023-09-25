@@ -16,6 +16,7 @@ from .utils import get_default_device, tensor_merge, tensor_divide, to_pil_image
 
 @lru_cache()
 def load_cdc_model(ckpt: Optional[str], scala=4, inc=3, n_HG=6, inter_supervis=True, gpus=1):
+    logging.info(f'Load model ckpt: {ckpt!r}, scala: {scala!r}, inc: {inc!r}, n_HG: {n_HG!r}')
     generator = HourGlassNetMultiScaleInt(
         in_nc=inc, out_nc=inc, upscale=scala,
         nf=64, res_type='res', n_mid=2, n_HG=n_HG, inter_supervis=inter_supervis

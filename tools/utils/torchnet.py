@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 from functools import lru_cache
 
 import torch
@@ -37,7 +38,7 @@ def load_weights(model, weights='', gpus=1, strict=True, resume=False, just_weig
     return model
 
 
-def _weights_rm_module(weights):
+def _old_weights_rm_module(weights):
     w = {}
     for key, value in weights.items():
         segments = key.split('.')
@@ -49,3 +50,18 @@ def _weights_rm_module(weights):
         w[key] = value
 
     return w
+
+
+def _weights_rm_module(weights):
+    prefix_compile = 'module._orig_mod.'
+    len_p = len(prefix_compile)
+
+    new_state_dict = OrderedDict()
+    for k, v in weights.items():
+        if k.startswith(prefix_compile):
+            name = k[len_p:]
+        else:
+            name = k[7:]  # remove `module.`
+        new_state_dict[name] = v
+
+    return new_state_dict
