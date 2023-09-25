@@ -1,7 +1,13 @@
+import os
+
+from huggingface_hub import HfFileSystem
+
+hf_fs = HfFileSystem()
+
 GLOBAL_CONTEXT_SETTINGS = dict(
     help_option_names=['-h', '--help']
 )
 EXIST_TORCH_MODELS = [
-    'HGSR-MHR-anime-aug_X4_320.pth',
-    'HGSR-MHR-anime_X4_280.pth',
+    os.path.basename(file) for file in
+    hf_fs.glob('7eu7d7/CDC_anime/*.pth')
 ]
