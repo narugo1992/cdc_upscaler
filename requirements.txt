@@ -2,3 +2,4 @@ pillow
 numpy
 huggingface_hub
 hbutils>=0.8.0
+tqdm

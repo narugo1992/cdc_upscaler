@@ -3,11 +3,12 @@ import os
 import re
 import warnings
 from functools import lru_cache
-from typing import Union, Optional, Mapping, Callable, List, Tuple
+from typing import Union, Optional, Mapping, List, Tuple
 
 import numpy as np
 from PIL import Image
 from huggingface_hub import hf_hub_download
+from tqdm.auto import tqdm
 
 from .device import _ensure_onnxruntime
 
@@ -30,7 +31,7 @@ def _open_image(image: Union[str, Image.Image]) -> Image.Image:
 CKPT_NAME_PATTERN = re.compile(r'^HGSR-MHR(-(?P<type>anime|anime-aug))?_X(?P<scale>\d+)_(?P<steps>\d+)\.onnx$')
 
 
-def parse_ckpt_name(filename: str):
+def parse_ckpt_name(filename: str) -> Tuple[str, int, int]:
     matching = CKPT_NAME_PATTERN.fullmatch(os.path.basename(filename))
     if matching:
         return matching.group('type'), int(matching.group('scale')), int(matching.group('steps'))
@@ -86,7 +87,7 @@ def _native_image_upscale(image: Union[str, Image.Image], ckpt: str, scala: Opti
 
     iters = (divided.shape[0] + batch - 1) // batch
     results = []
-    for i in range(iters):
+    for i in tqdm(range(iters), desc=f'Inference {scala}x'):
         logging.info(f'Inference {i + 1} / {iters} ...')
         input_ = divided[i * batch: (i + 1) * batch]
         b_batch, b_channels, b_height, b_width = input_.shape
@@ -106,9 +107,7 @@ def _native_image_upscale(image: Union[str, Image.Image], ckpt: str, scala: Opti
     return to_pil_image(np.clip(final_data[0] / rgb_range, a_min=0.0, a_max=1.0))
 
 
-_DEFAULT_CKPTS: Mapping[int, Callable[[], str]] = {
-    4: _get_onnx_4x_model,
-}
+ONNX_REPOSITORY = 'narugo/CDC_anime_onnx'
 
 
 def _parse_custom_ckpt(ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int, str]]]]) -> Mapping[int, str]:
@@ -118,9 +117,11 @@ def _parse_custom_ckpt(ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int,
 
     for i, item in enumerate(ckpt):
         if isinstance(item, str):
-            scala, path = parse_ckpt_name(item), item
+            item = hf_hub_download(repo_id=ONNX_REPOSITORY, filename=f'{item}.onnx')
+            scala, path = parse_ckpt_name(item)[1], item
         elif isinstance(item, tuple):
             scala, path = item
+            path = hf_hub_download(repo_id=ONNX_REPOSITORY, filename=f'{path}.onnx')
         else:
             raise TypeError(f'Unknown custom ckpt type on {i}th - {item!r}.')
 
@@ -129,15 +130,20 @@ def _parse_custom_ckpt(ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int,
     return data
 
 
+_DEFAULT_CKPT_GROUPS = {
+    4: 'HGSR-MHR-anime-aug_X4_320'
+}
+
+
 def image_upscale(image: Union[str, Image.Image], scale: float,
-                  ckpt: Union[Mapping[int, str], List[Union[str, Tuple[int, str]]], None] = None,
+                  ckpts: Union[Mapping[int, str], List[Union[str, Tuple[int, str]]], None] = None,
                   provider: Optional[str] = None, psize: int = 512, overlap=64, batch: int = 1,
                   rgb_range: float = 1.0) -> Image.Image:
     image: Image.Image = _open_image(image)
     origin_width, origin_height = image.size
     target_width, target_height = map(lambda x: int(round(x * scale)), (origin_width, origin_height))
 
-    _real_ckpts = {**_DEFAULT_CKPTS, **_parse_custom_ckpt(ckpt or {})}
+    _real_ckpts = _parse_custom_ckpt(ckpts or _DEFAULT_CKPT_GROUPS)
     _model_scales = sorted(_real_ckpts.keys())
     scales = []
     while scale > 1.0:
@@ -154,7 +160,7 @@ def image_upscale(image: Union[str, Image.Image], scale: float,
     for i, scale_item in enumerate(scales):
         logging.info(f'Upscaling step {i + 1} / {len(scales)} - {scale_item}x ...')
         image = _native_image_upscale(
-            image, _real_ckpts[scale_item](), scale_item, provider,
+            image, _real_ckpts[scale_item], scale_item, provider,
             psize, overlap, batch, rgb_range
         )
 
