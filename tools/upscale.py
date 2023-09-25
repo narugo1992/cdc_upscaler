@@ -50,7 +50,7 @@ def open_image(image: Union[str, Image.Image]) -> Image.Image:
         raise TypeError(f'Unknown image type - {image!r}.')
 
 
-CKPT_NAME_PATTERN = re.compile(r'^HGSR-MHR-(?P<type>anime|anime-aug)_X(?P<scale>\d+)_(?P<steps>\d+)\.pth$')
+CKPT_NAME_PATTERN = re.compile(r'^HGSR-MHR(-(?P<type>anime|anime-aug))?_X(?P<scale>\d+)_(?P<steps>\d+)\.pth$')
 
 
 def parse_ckpt_name(filename: str):
